@@ -243,7 +243,7 @@ class Call:
         self._is_ok = False
         self._response = payload
         logger.error(f'Failed call [{self}]')
-        logger.error(f'Call {self.identity} - {self.description} failed')
+        logger.error(f'Call {self.identity} - {self.description} failed, \n {self.request} \n {self.response}')
     
     def __repr__(self):
         return f'Call {self.identity} - {self.description}'
