@@ -68,15 +68,20 @@ class Client:
         await self.ws.connect(host, port)
 
     async def listen(self, blocking=True):
-        while True:
-            data = await self.ws.receive()
-            if not data:
-                break
+
+        async def _handle(data):
             try:
                 await self.handle_event(data)
             except:
                 logger.exception('Failure while handling event')
-            
+   
+        while True:
+            data = await self.ws.receive()
+            if not data:
+                raise RuntimeError('no data, exiting')
+
+            asyncio.create_task(_handle(data))
+
             if not blocking:
                 break
 
@@ -88,7 +93,8 @@ class Client:
             description=f'Authenticating'
             )
         await self.execute_call(call)
-        return call
+        await call.wait_for_complete()
+        return call.data
 
     async def subscribe(self, event_type, handler):
         identity = next(self.identity)
@@ -99,7 +105,8 @@ class Client:
             description=f'Subscribing to: {event_type} with handler {str(handler)}'
             )
         await self.execute_call(call)
-        return call
+        await call.wait_for_complete()
+        return call.data
 
     async def call_service(self, domain, service, data={}):
         identity = next(self.identity)
@@ -119,7 +126,24 @@ class Client:
             )
 
         await self.execute_call(call)
-        return call
+        await call.wait_for_complete()
+        return call.data
+    
+    async def get_states(self):
+        identity = next(self.identity)
+        res = {
+            "id": identity,
+            "type": "get_states"
+        }
+
+        call = Call(
+            identity=identity,
+            request=res,
+            description=f'Getting states'
+            )
+        await self.execute_call(call)
+        await call.wait_for_complete()
+        return call.data
 
     async def execute_call(self, call):
         logger.info(f'Executing call [{call}]')
@@ -193,10 +217,10 @@ def identity():
 
     Used by client to generate a unique id for each message
     """
-    id_ = 2
+    id_ = 1
     while True:
         yield id_
-        id_ = id_+2
+        id_ = id_+1
 
 class Call:
 
@@ -229,6 +253,10 @@ class Call:
         return self._response
 
     @property
+    def data(self):
+        return self._response.get('result')
+
+    @property
     def description(self):
         return self._description
 
@@ -244,6 +272,13 @@ class Call:
         self._response = payload
         logger.error(f'Failed call [{self}]')
         logger.error(f'Call {self.identity} - {self.description} failed, \n {self.request} \n {self.response}')
+
+    async def wait_for_complete(self):
+        while True:
+            if self.is_complete:
+                return
+            await asyncio.sleep(0.1)
+
     
     def __repr__(self):
         return f'Call {self.identity} - {self.description}'

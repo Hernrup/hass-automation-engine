@@ -101,8 +101,6 @@ class TFSwitch():
         except NotApplicableError:
             return
 
-        
-
         signal_map = {
             TFSwitchState.on: self.handler.on,
             TFSwitchState.on_long: self.handler.on_long,
@@ -177,7 +175,6 @@ class TFMotionSensor():
         try:
             signal = await self.check_event(data)
         except NotApplicableError as e:
-            print(str(e))
             return
 
         print(f'hej got signal {signal}')

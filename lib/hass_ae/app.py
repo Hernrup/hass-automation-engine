@@ -8,16 +8,24 @@ import cachetools
 import hass_ae.client as hac
 import hass_ae.config
 import hass_ae.automation
+import hass_ae.entities
 
 
 logger = logging.getLogger(__name__)
 
 async def main_loop(client, host, port, access_token):
+    state_manager = hass_ae.entities.StateManager(client)
     await client.connect(host, port)
+
+    listen_task = asyncio.create_task(client.listen())
+
     await client.authenticate(access_token)
-    await client.listen(blocking=False)
+
+
+    await state_manager.refresh()
     await hass_ae.automation.setup(client)
-    await client.listen(blocking=True)
+
+    await listen_task
 
 def run():
     config = hass_ae.config.Config()
