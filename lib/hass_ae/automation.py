@@ -2,8 +2,10 @@ import logging
 from hass_ae.dl import Light, TFSwitch, TFSwitchState, TFSwitchHandler
 from hass_ae.dl import Outlet, TFMotionSensor, TFMotionSensorHandler
 import hass_ae.dl
+import hass_ae.entities
 import enum
 import time
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +33,12 @@ class DEVICES:
     motionsensor_entry='s_ms_tf_2'
 
 
-async def setup(client):
+async def setup(client, state_manager):
     await client.subscribe('deconz_event', deconz_event_handler)
     await client.subscribe('state_changed', state_change_handler)
+
+    ip = hass_ae.entities.InputSelect('i_home_state', state_manager)
+    
 
 async def deconz_event_handler(message, client):
     await NightSwitch(client).evaluate(message)
@@ -43,6 +48,7 @@ async def deconz_event_handler(message, client):
     
 async def state_change_handler(message, client):
     await SecondaryEntryMotionSensor(client).evaluate(message)
+
 
 class NightSwitch(TFSwitch):
 

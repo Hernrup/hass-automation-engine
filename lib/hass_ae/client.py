@@ -75,6 +75,7 @@ class Client:
             except:
                 logger.exception('Failure while handling event')
    
+        logger.info('listner started')
         while True:
             data = await self.ws.receive()
             if not data:
@@ -84,6 +85,8 @@ class Client:
 
             if not blocking:
                 break
+
+        logger.info('listner terminated')
 
 
     async def authenticate(self, access_token):
@@ -282,3 +285,26 @@ class Call:
     
     def __repr__(self):
         return f'Call {self.identity} - {self.description}'
+
+class StateManager():
+
+    def __init__(self):
+        self._states = {}
+
+    @property
+    def states(self):
+        return self._states
+   
+    def get(self, state, default=None):
+        return self._states.get(state, default)
+
+    def update(self, state, value):
+        self._states[state] = value
+        logger.debug(f'{state} changed to {value}')
+
+    def load(self, data):
+        self._states = self._parse_from_raw_states(data)
+
+    @classmethod
+    def _parse_from_raw_states(cls, data):
+        return {d['entity_id']: d['state'] for d in data}

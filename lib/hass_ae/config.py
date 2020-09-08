@@ -13,7 +13,8 @@ class Config(dict):
             'host':'localhost',
             'port':8123,
             'access_token': 'change-me',
-            'log_level': 'info'
+            'log_level': 'info',
+            'ws_log_level': 'info'
         }
 
         values = {k:os.getenv(k.upper(), defaults[k]) for k, v in defaults.items()}

@@ -1,25 +1,22 @@
 import pprint
+import enum
 
-class StateManager():
+class InputSelect():
 
-    def __init__(self, client):
-        self.client = client
-        self._states = {}
+    DOMAIN = 'input_select'
+
+    class States(enum.Enum):
+        sleep = 1
+        home = 2
+        away = 3
+
+    def __init__(self, identity, state_manager):
+        self.identity = identity
+        self.full_identity = f'{self.DOMAIN}.{self.identity}'
+        self.state_manager = state_manager
 
     @property
-    def states(self):
-        return self._states
-   
-    def get(self, state, default=None):
-        return self.get(state, default)
+    def state(self):
+        raw = self.state_manager.get(self.full_identity)
+        return self.States[raw.lower()]
 
-    def update(self, state, value):
-        self._states[state] = value
-
-    async def refresh(self):
-        data = await self.client.get_states()
-        self._states = self._parse_from_raw_states(data)
-
-    @classmethod
-    def _parse_from_raw_states(cls, data):
-        return {d['entity_id']: d['state'] for d in data}
