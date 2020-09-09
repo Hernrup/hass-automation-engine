@@ -5,39 +5,6 @@ import abc
 
 logger = logging.getLogger(__name__)
 
-class InputSelect():
-
-    DOMAIN = 'input_select'
-
-    class States(enum.Enum):
-        sleep = 1
-        home = 2
-        away = 3
-
-    def __init__(self, identity, client, state_manager):
-        self.identity = identity
-        self.full_identity = f'{self.DOMAIN}.{self.identity}'
-        self.state_manager = state_manager
-
-    @property
-    def state(self):
-        raw = self.state_manager.get(self.full_identity)
-        return self.States[raw.lower()]
-
-class InputBoolean():
-
-    DOMAIN = 'input_boolean'
-
-    def __init__(self, identity, client, state_manager):
-        self.identity = identity
-        self.full_identity = f'{self.DOMAIN}.{self.identity}'
-        self.state_manager = state_manager
-
-    @property
-    def state(self):
-        raw = self.state_manager.get(self.full_identity)
-        return bool(raw.lower() == 'on')
-
 
 class Listner():
 
@@ -166,6 +133,91 @@ class TFMotionSensorHandler(abc.ABC):
 
     async def off(self):
         pass
+
+
+class BoolenStateEntity(abc.ABC):
+
+    DOMAIN = 'NA'
+
+    def __init__(self, identity, client):
+        self.identity = identity
+        self.client = client
+        self.full_identity = f'{self.DOMAIN}.{self.identity}'
+
+    async def set_state(self, state:bool=True):
+        if state:
+            await self.turn_on()
+        else:
+            await self.turn_off()
+
+    async def turn_on(self):
+        await self.client.call_service(
+            domain=self.DOMAIN,
+            service='turn_on',
+            data={"service_data": {"entity_id": self.full_identity}})
+
+    async def turn_off(self):
+        await self.client.call_service(
+            domain=self.DOMAIN,
+            service='turn_off',
+            data={"service_data": {"entity_id": self.full_identity}})
+
+    async def toggle(self):
+        await self.client.call_service(
+            domain=self.DOMAIN,
+            service='toggle',
+            data={"service_data": {"entity_id": self.full_identity}})
+
+
+class Light(BoolenStateEntity):
+
+    DOMAIN = 'light'
+
+    def __init__(self, identity, client):
+        super().__init__(identity, client)
+
+    async def set_state(self, on=True, brightness=None):
+        if on:
+            await self.turn_on(brightness)
+        else:
+            await self.turn_off()
+
+    async def turn_on(self, brightness=None):
+        service_data = {"entity_id": self.full_identity}
+        if brightness:
+            service_data.update({"brightness_pct": brightness})
+
+        await self.client.call_service(
+            domain=self.DOMAIN,
+            service='turn_on',
+            data={"service_data": service_data})
+
+class Outlet(BoolenStateEntity):
+
+    DOMAIN = 'switch'
+
+    def __init__(self, identity, client):
+        super().__init__(identity, client)
+
+    async def set_state(self, on=True):
+        if on:
+            await self.turn_on()
+        else:
+            await self.turn_off()
+
+class InputBoolean(BoolenStateEntity):
+
+    DOMAIN = 'input_boolean'
+
+    def __init__(self, identity, client, state_manager):
+        super().__init__(identity, client)
+        self.state_manager = state_manager
+
+    @property
+    def state(self):
+        raw = self.state_manager.get(self.full_identity)
+        return bool(raw.lower() == 'on')
+
 
 class Error(Exception):
     pass
