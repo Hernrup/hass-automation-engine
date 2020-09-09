@@ -37,11 +37,6 @@ class DEVICES:
 
 
 async def setup(client, state_manager):
-    ib_home = InputBoolean('ib_is_home', client, state_manager)
-    ib_sleep = InputBoolean('ib_is_sleep', client, state_manager)
-
-    await ib_home.turn_on()
-    await ib_home.turn_off()
 
     await TFSwitch(
         identity=DEVICES.switch_livingroom,
@@ -52,27 +47,32 @@ async def setup(client, state_manager):
     await TFSwitch(
         identity=DEVICES.switch_night,
         client=client,
-        handler=NightSwitchHandler(client)
+        handler=NightSwitchHandler(client, state_manager)
     ).subscribe()
 
     await TFSwitch(
         identity=DEVICES.switch_secondary_entry,
         client=client,
-        handler=SecondaryEntrySwitchHandler(client)
+        handler=SecondaryEntrySwitchHandler(client, state_manager)
     ).subscribe()
 
     await TFSwitch(
         identity=DEVICES.switch_tvroom,
         client=client,
-        handler=TvRoomSwitchHandler(client)
+        handler=TvRoomSwitchHandler(client, state_manager)
     ).subscribe()
 
     await TFMotionSensor(
         identity=DEVICES.motionsensor_secondaryentry,
         client=client,
-        handler=SecondaryEntryMotionSensorHandler(client)
+        handler=SecondaryEntryMotionSensorHandler(client, state_manager)
     ).subscribe()
 
+    await TFMotionSensor(
+        identity=DEVICES.motionsensor_entry,
+        client=client,
+        handler=EntryMotionSensorHandler(client, state_manager)
+    ).subscribe()
 
 class LivingroomSwitchHandler(TFSwitchHandler):
 
@@ -97,87 +97,127 @@ class LivingroomSwitchHandler(TFSwitchHandler):
 
 class NightSwitchHandler(TFSwitchHandler):
 
-    def __init__(self, client):
+    def __init__(self, client, state_manager):
         self.client = client
+        self.state_manager = state_manager
 
     async def on(self):
-        await set_entry_lights(self.client, True)
-        await set_livingroom_lights(self.client, True)
-        await set_tvroom_lights(self.client, True)
+        await InputBoolean('ib_is_sleep', self.client, self.state_manager).turn_off()
+        await InputBoolean('ib_is_home', self.client, self.state_manager).turn_on()
 
     async def off(self):
-        await set_entry_lights(self.client, False)
-        await set_livingroom_lights(self.client, False)
-        await set_tvroom_lights(self.client, False)
-        await Outlet(self.client, DEVICES.outlet_tv).turn_off()
+        await InputBoolean('ib_is_sleep', self.client, self.state_manager).turn_on()
+
+        await set_entry_lights(self.client, self.state_manager, False)
+        await set_livingroom_lights(self.client, self.state_manager, False)
+        await set_tvroom_lights(self.client, self.state_manager, False)
+        # await Outlet(self.client, DEVICES.outlet_tv).turn_off()
 
 class SecondaryEntrySwitchHandler(TFSwitchHandler):
 
-    def __init__(self, client):
+    def __init__(self, client, state_manager):
         self.client = client
+        self.state_manager = state_manager
 
     async def on(self):
-        await set_entry_lights(self.client, True)
-        await set_livingroom_lights(self.client, True)
-        await set_tvroom_lights(self.client, True)
+        await InputBoolean('ib_is_home', self.client, self.state_manager).turn_on()
+        await InputBoolean('ib_is_sleep', self.client, self.state_manager).turn_off()
 
     async def off(self):
-        await set_entry_lights(self.client, False)
-        await set_livingroom_lights(self.client, False)
-        await set_tvroom_lights(self.client, False)
-        await Outlet(self.client, DEVICES.outlet_tv).turn_off()
+        await InputBoolean('ib_is_home', self.client, self.state_manager).turn_off()
+        await InputBoolean('ib_is_sleep', self.client, self.state_manager).turn_off()
+
+        await Light(DEVICES.light_secondaryentry_roof, self.client, self.state_manager).turn_off()
+        await set_entry_lights(self.client, self.state_manager, False)
+        await set_livingroom_lights(self.client, self.state_manager, False)
+        await set_tvroom_lights(self.client, self.state_manager, False)
+        # await Outlet(self.client, DEVICES.outlet_tv).turn_off()
 
 
 class TvRoomSwitchHandler(TFSwitchHandler):
 
-    def __init__(self, client):
+    def __init__(self, client, state_manager):
         self.client = client
+        self.state_manager = state_manager
 
     async def on(self):
         await set_tvroom_lights(self.client, True, 100)
-        await Outlet(self.client, DEVICES.outlet_tv).turn_on()
+        await Outlet(DEVICES.outlet_tv, self.client, self.state_manager).turn_on()
 
     async def on_long(self):
-        await set_tvroom_lights(self.client, True, 30)
+        await set_tvroom_lights(self.client, self.state_manager, True, 30)
 
     async def off(self):
-        await set_tvroom_lights(self.client, False)
+        await set_tvroom_lights(self.client, self.state_manager, False)
 
     async def off_long(self):
-        await set_tvroom_lights(self.client, False)
-        await Outlet(DEVICES.outlet_tv, self.client).turn_off()
+        await set_tvroom_lights(self.client, self.state_manager, False)
+        await Outlet(DEVICES.outlet_tv, self.client, self.state_manager).turn_off()
 
 class SecondaryEntryMotionSensorHandler(TFMotionSensorHandler):
 
-    def __init__(self, client):
+    def __init__(self, client, state_manager):
         self.client = client
+        self.state_manager = state_manager
         self.timer = None
 
     async def on(self):
-        await Light(DEVICES.light_secondaryentry_roof, self.client).set_state(True, brightness=100)
+        await Light(DEVICES.light_secondaryentry_roof, self.client, self.state_manager).set_state(True, brightness=100)
 
         async def timer_callback():
-            await Light(DEVICES.light_secondaryentry_roof, self.client).set_state(False)
+            await Light(DEVICES.light_secondaryentry_roof, self.client, self.state_manager).set_state(False)
 
         self.timer = Timer(callback=timer_callback, timeout=15*60) 
         await self.timer.restart()
 
 
-async def set_livingroom_lights(client, on=True, brightess=None):
-    await Light(DEVICES.light_livingroom_roof, client).set_state(on, brightness=brightess)
-    await Light(DEVICES.light_livingroom_side, client).set_state(on, brightness=brightess)
-    await Outlet(DEVICES.outlet_tablelamp_1, client).set_state(on)
+class EntryMotionSensorHandler(TFMotionSensorHandler):
+
+    def __init__(self, client, state_manager):
+        self.client = client
+        self.state_manager = state_manager
+        self.timer = None
+
+    async def on(self):
+
+        is_home = InputBoolean('ib_is_home', self.client, self.state_manager).state
+        is_sleep = InputBoolean('ib_is_sleep', self.client, self.state_manager).state
+        
+        logger.debug('Entry sensor triggered')
+
+        async def _handle(l):
+            if (is_sleep and is_home) or not is_home:
+                logger.debug('Sleep or away mode active: turning on dimmed lights temporarely')
+                brightess=20
+                await l.turn_on(brightness=brightess)
+                self.timer = Timer(callback=l.turn_off, timeout=5*60) 
+                await self.timer.restart()
+            else: 
+                if not l.state:
+                    logger.debug('Turning on dimmed entry lights')
+                    await l.turn_on(brightness=50)
+                else:
+                    logger.debug('entry lights already on, no action')
+        
+        await _handle(Light(DEVICES.light_entry_roof_1, self.client, self.state_manager))
+        await _handle(Light(DEVICES.light_livingroom_roof, self.client, self.state_manager))
 
 
-async def set_tvroom_lights(client, on=True, brightess=None):
-    await Outlet(DEVICES.outlet_whisky, client).set_state(on)
+async def set_livingroom_lights(client, state_manager, on=True, brightess=None):
+    await Light(DEVICES.light_livingroom_roof, client, state_manager).set_state(on, brightness=brightess)
+    await Light(DEVICES.light_livingroom_side, client, state_manager).set_state(on, brightness=brightess)
+    await Outlet(DEVICES.outlet_tablelamp_1, client, state_manager).set_state(on)
 
 
-async def set_entry_lights(client, on=True, brightess=None):
-    await Light(DEVICES.light_entry_roof_1, client).set_state(on, brightness=brightess)
-    await Light(DEVICES.light_entry_roof_2, client).set_state(on, brightness=brightess)
-    await Outlet(DEVICES.outlet_entrylight, client).set_state(on)
+async def set_tvroom_lights(client, state_manager, on=True, brightess=None):
+    await Outlet(DEVICES.outlet_whisky, client, state_manager).set_state(on)
 
 
-async def set_secondaryentry_lights(client, on=True, brightess=None):
-    await Light(DEVICES.light_secondaryentry_roof, client).set_state(on, brightness=brightess)
+async def set_entry_lights(client, state_manager, on=True, brightess=None):
+    await Light(DEVICES.light_entry_roof_1, client, state_manager).set_state(on, brightness=brightess)
+    await Light(DEVICES.light_entry_roof_2, client, state_manager).set_state(on, brightness=brightess)
+    await Outlet(DEVICES.outlet_entrylight, client, state_manager).set_state(on)
+
+
+async def set_secondaryentry_lights(client, state_manager, on=True, brightess=None):
+    await Light(DEVICES.light_secondaryentry_roof, client, state_manager).set_state(on, brightness=brightess)
