@@ -1,47 +1,47 @@
 {
     "event_type": "state_changed",
     "data": {
-        "entity_id": "light.l_tf_4",
+        "entity_id": "binary_sensor.s_ms_tf_1",
         "old_state": {
-            "entity_id": "light.l_tf_4",
-            "state": "on",
+            "entity_id": "binary_sensor.s_ms_tf_1",
+            "state": "off",
             "attributes": {
-                "brightness": 2,
-                "is_deconz_group": false,
-                "friendly_name": "l_tf_4",
-                "supported_features": 41
+                "on": true,
+                "dark": true,
+                "friendly_name": "s_ms_tf_1",
+                "device_class": "motion"
             },
-            "last_changed": "2020-09-09T17:33:43.988865+00:00",
-            "last_updated": "2020-09-09T17:33:44.181802+00:00",
+            "last_changed": "2020-09-09T18:47:14.377354+00:00",
+            "last_updated": "2020-09-09T18:47:14.377354+00:00",
             "context": {
-                "id": "9bced8d3f2c211eaacef49a546640540",
+                "id": "e09bb750f2cc11ea92f735028a1cb781",
                 "parent_id": null,
-                "user_id": "4540bcdd080444ccbc76b76f3bd79d3a"
+                "user_id": null
             }
         },
         "new_state": {
-            "entity_id": "light.l_tf_4",
+            "entity_id": "binary_sensor.s_ms_tf_1",
             "state": "on",
             "attributes": {
-                "brightness": 254,
-                "is_deconz_group": false,
-                "friendly_name": "l_tf_4",
-                "supported_features": 41
+                "on": true,
+                "dark": true,
+                "friendly_name": "s_ms_tf_1",
+                "device_class": "motion"
             },
-            "last_changed": "2020-09-09T17:33:43.988865+00:00",
-            "last_updated": "2020-09-09T17:33:45.142348+00:00",
+            "last_changed": "2020-09-09T18:53:07.868853+00:00",
+            "last_updated": "2020-09-09T18:53:07.868853+00:00",
             "context": {
-                "id": "9bced8d3f2c211eaacef49a546640540",
+                "id": "b34e3cccf2cd11ea9946ef6ab5836bec",
                 "parent_id": null,
-                "user_id": "4540bcdd080444ccbc76b76f3bd79d3a"
+                "user_id": null
             }
         }
     },
     "origin": "LOCAL",
-    "time_fired": "2020-09-09T17:33:45.142370+00:00",
+    "time_fired": "2020-09-09T18:53:07.868891+00:00",
     "context": {
-        "id": "9bced8d3f2c211eaacef49a546640540",
+        "id": "b34e3cccf2cd11ea9946ef6ab5836bec",
         "parent_id": null,
-        "user_id": "4540bcdd080444ccbc76b76f3bd79d3a"
+        "user_id": null
     }
 }

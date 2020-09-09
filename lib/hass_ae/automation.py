@@ -4,6 +4,7 @@ from hass_ae.entities import Outlet
 from hass_ae.entities import TFSwitch, TFSwitchHandler
 from hass_ae.entities import TFMotionSensor, TFMotionSensorHandler
 from hass_ae.entities import InputBoolean
+from hass_ae.entities import Timer
 import enum
 import time
 import asyncio
@@ -144,18 +145,22 @@ class TvRoomSwitchHandler(TFSwitchHandler):
 
     async def off_long(self):
         await set_tvroom_lights(self.client, False)
-        await Outlet(self.client, DEVICES.outlet_tv).turn_off()
+        await Outlet(DEVICES.outlet_tv, self.client).turn_off()
 
 class SecondaryEntryMotionSensorHandler(TFMotionSensorHandler):
 
     def __init__(self, client):
         self.client = client
+        self.timer = None
 
     async def on(self):
-        await Light(self.client, DEVICES.light_secondaryentry_roof).set_state(True, brightness=100)
+        await Light(DEVICES.light_secondaryentry_roof, self.client).set_state(True, brightness=100)
 
-    async def off(self):
-        await Light(self.client, DEVICES.light_secondaryentry_roof).set_state(False)
+        async def timer_callback():
+            await Light(DEVICES.light_secondaryentry_roof, self.client).set_state(False)
+
+        self.timer = Timer(callback=timer_callback, timeout=15*60) 
+        await self.timer.restart()
 
 
 async def set_livingroom_lights(client, on=True, brightess=None):

@@ -2,6 +2,7 @@ import pprint
 import enum
 import logging
 import abc
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -218,6 +219,28 @@ class InputBoolean(BoolenStateEntity):
         raw = self.state_manager.get(self.full_identity)
         return bool(raw.lower() == 'on')
 
+
+class Timer():
+
+    def __init__(self, callback, timeout):
+        self.timeout = timeout
+        self.callback = callback
+        self.task = None
+
+    async def _timer_fn(self):
+        logger.debug(f'timer started')
+        await asyncio.sleep(self.timeout)
+        await self.callback()
+
+
+    async def start(self):
+        self.task = asyncio.create_task(self._timer_fn())
+
+    async def restart(self):
+        if self.task:
+            self.task.cancel()
+
+        await self.start()
 
 class Error(Exception):
     pass
