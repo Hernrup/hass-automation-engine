@@ -1,0 +1,47 @@
+{
+    "event_type": "state_changed",
+    "data": {
+        "entity_id": "light.l_tf_4",
+        "old_state": {
+            "entity_id": "light.l_tf_4",
+            "state": "on",
+            "attributes": {
+                "brightness": 2,
+                "is_deconz_group": false,
+                "friendly_name": "l_tf_4",
+                "supported_features": 41
+            },
+            "last_changed": "2020-09-09T17:33:43.988865+00:00",
+            "last_updated": "2020-09-09T17:33:44.181802+00:00",
+            "context": {
+                "id": "9bced8d3f2c211eaacef49a546640540",
+                "parent_id": null,
+                "user_id": "4540bcdd080444ccbc76b76f3bd79d3a"
+            }
+        },
+        "new_state": {
+            "entity_id": "light.l_tf_4",
+            "state": "on",
+            "attributes": {
+                "brightness": 254,
+                "is_deconz_group": false,
+                "friendly_name": "l_tf_4",
+                "supported_features": 41
+            },
+            "last_changed": "2020-09-09T17:33:43.988865+00:00",
+            "last_updated": "2020-09-09T17:33:45.142348+00:00",
+            "context": {
+                "id": "9bced8d3f2c211eaacef49a546640540",
+                "parent_id": null,
+                "user_id": "4540bcdd080444ccbc76b76f3bd79d3a"
+            }
+        }
+    },
+    "origin": "LOCAL",
+    "time_fired": "2020-09-09T17:33:45.142370+00:00",
+    "context": {
+        "id": "9bced8d3f2c211eaacef49a546640540",
+        "parent_id": null,
+        "user_id": "4540bcdd080444ccbc76b76f3bd79d3a"
+    }
+}

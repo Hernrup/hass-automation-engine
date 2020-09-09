@@ -21,6 +21,7 @@ class DEVICES:
     switch_livingroom='sw_tf_1'
     switch_secondary_entry='sw_tf_2'
     switch_tvroom='sw_tf_5'
+    switch_night='sw_tf_3'
     #outlets
     outlet_whisky='o_rf_2'
     outlet_tablelamp_1='o_rf_1'
@@ -34,110 +35,123 @@ class DEVICES:
 
 
 async def setup(client, state_manager):
-    await client.subscribe('deconz_event', deconz_event_handler)
-    await client.subscribe('state_changed', state_change_handler)
+    ib_home = hass_ae.entities.InputBoolean('ib_is_home', client, state_manager)
+    ib_sleep = hass_ae.entities.InputBoolean('ib_is_sleep', client, state_manager)
 
-    ip = hass_ae.entities.InputSelect('i_home_state', state_manager)
-    
+    await hass_ae.entities.TFSwitch(
+        identity=DEVICES.switch_livingroom,
+        client=client,
+        handler=LivingroomSwitchHandler(client)
+    ).subscribe()
 
-async def deconz_event_handler(message, client):
-    await NightSwitch(client).evaluate(message)
-    await SecondaryEntrySwitch(client).evaluate(message)
-    await LivingRoomSwitch(client).evaluate(message)
-    await TvRoomSwitch(client).evaluate(message)
-    
-async def state_change_handler(message, client):
-    await SecondaryEntryMotionSensor(client).evaluate(message)
+    await hass_ae.entities.TFSwitch(
+        identity=DEVICES.switch_night,
+        client=client,
+        handler=NightSwitchHandler(client)
+    ).subscribe()
 
+    await hass_ae.entities.TFSwitch(
+        identity=DEVICES.switch_secondary_entry,
+        client=client,
+        handler=SecondaryEntrySwitchHandler(client)
+    ).subscribe()
 
-class NightSwitch(TFSwitch):
+    await hass_ae.entities.TFSwitch(
+        identity=DEVICES.switch_tvroom,
+        client=client,
+        handler=TvRoomSwitchHandler(client)
+    ).subscribe()
 
-    def __init__(self, client):
-        super().__init__(client, DEVICES.switch_entry, self._handler)
-
-    class _handler(TFSwitchHandler):
-        @staticmethod
-        async def on(client):
-            await set_entry_lights(client, True)
-            await set_livingroom_lights(client, True)
-            await set_tvroom_lights(client, True)
-
-        @staticmethod
-        async def off(client):
-            await set_entry_lights(client, False)
-            await set_livingroom_lights(client, False)
-            await set_tvroom_lights(client, False)
-            await Outlet(client, DEVICES.outlet_tv).turn_off()
-
-class SecondaryEntrySwitch(TFSwitch):
-
-    def __init__(self, client):
-        super().__init__(client, DEVICES.switch_entry, self._handler)
-
-    class _handler(TFSwitchHandler):
-        @staticmethod
-        async def on(client):
-            await set_entry_lights(client, True)
-            await set_livingroom_lights(client, True)
-            await set_tvroom_lights(client, True)
-
-        @staticmethod
-        async def off(client):
-            await set_entry_lights(client, False)
-            await set_livingroom_lights(client, False)
-            await set_tvroom_lights(client, False)
-            await Outlet(client, DEVICES.outlet_tv).turn_off()
+    await hass_ae.entities.TFMotionSensor(
+        identity=DEVICES.motionsensor_secondaryentry,
+        client=client,
+        handler=SecondaryEntryMotionSensorHandler(client)
+    ).subscribe()
 
 
-class LivingRoomSwitch(TFSwitch):
+class LivingroomSwitchHandler(hass_ae.entities.TFSwitchHandler):
 
     def __init__(self, client):
-        super().__init__(client, DEVICES.switch_livingroom, self._handler)
+        self.client = client
 
-    class _handler(TFSwitchHandler):
-        @staticmethod
-        async def on(client):
-            await set_livingroom_lights(client, True, 100)
-            await set_entry_lights(client, True, 100)
+    async def on(self):
+        await set_livingroom_lights(self.client, True, 100)
+        await set_entry_lights(self.client, True, 100)
 
-        @staticmethod
-        async def on_long(client):
-            await set_livingroom_lights(client, True, 30)
-            await set_entry_lights(client, True, 30)
+    async def on_long(self):
+        await set_livingroom_lights(self.client, True, 30)
+        await set_entry_lights(self.client, True, 30)
 
-        @staticmethod
-        async def off(client):
-            await set_livingroom_lights(client, False)
-            await set_entry_lights(client, False)
+    async def off(self):
+        await set_livingroom_lights(self.client, False)
+        await set_entry_lights(self.client, False)
 
-        @staticmethod
-        async def off_long(client):
-            await set_livingroom_lights(client, False)
-            await set_entry_lights(client, False)
+    async def off_long(self):
+        await set_livingroom_lights(self.client, False)
+        await set_entry_lights(self.client, False)
 
-class TvRoomSwitch(TFSwitch):
+class NightSwitchHandler(hass_ae.entities.TFSwitchHandler):
 
     def __init__(self, client):
-        super().__init__(client, DEVICES.switch_tvroom, self._handler)
+        self.client = client
 
-    class _handler(TFSwitchHandler):
-        @staticmethod
-        async def on(client):
-            await set_tvroom_lights(client, True, 100)
-            await Outlet(client, DEVICES.outlet_tv).turn_on()
+    async def on(self):
+        await set_entry_lights(self.client, True)
+        await set_livingroom_lights(self.client, True)
+        await set_tvroom_lights(self.client, True)
 
-        @staticmethod
-        async def on_long(client):
-            await set_tvroom_lights(client, True, 30)
+    async def off(self):
+        await set_entry_lights(self.client, False)
+        await set_livingroom_lights(self.client, False)
+        await set_tvroom_lights(self.client, False)
+        await Outlet(self.client, DEVICES.outlet_tv).turn_off()
 
-        @staticmethod
-        async def off(client):
-            await set_tvroom_lights(client, False)
+class SecondaryEntrySwitchHandler(hass_ae.entities.TFSwitchHandler):
 
-        @staticmethod
-        async def off_long(client):
-            await set_tvroom_lights(client, False)
-            await Outlet(client, DEVICES.outlet_tv).turn_off()
+    def __init__(self, client):
+        self.client = client
+
+    async def on(self):
+        await set_entry_lights(self.client, True)
+        await set_livingroom_lights(self.client, True)
+        await set_tvroom_lights(self.client, True)
+
+    async def off(self):
+        await set_entry_lights(self.client, False)
+        await set_livingroom_lights(self.client, False)
+        await set_tvroom_lights(self.client, False)
+        await Outlet(self.client, DEVICES.outlet_tv).turn_off()
+
+
+class TvRoomSwitchHandler(hass_ae.entities.TFSwitchHandler):
+
+    def __init__(self, client):
+        self.client = client
+
+    async def on(self):
+        await set_tvroom_lights(self.client, True, 100)
+        await Outlet(self.client, DEVICES.outlet_tv).turn_on()
+
+    async def on_long(self):
+        await set_tvroom_lights(self.client, True, 30)
+
+    async def off(self):
+        await set_tvroom_lights(self.client, False)
+
+    async def off_long(self):
+        await set_tvroom_lights(self.client, False)
+        await Outlet(self.client, DEVICES.outlet_tv).turn_off()
+
+class SecondaryEntryMotionSensorHandler(hass_ae.entities.TFMotionSensorHandler):
+
+    def __init__(self, client):
+        self.client = client
+
+    async def on(self):
+        await Light(self.client, DEVICES.light_secondaryentry_roof).set_state(True, brightness=100)
+
+    async def off(self):
+        await Light(self.client, DEVICES.light_secondaryentry_roof).set_state(False)
 
 
 async def set_livingroom_lights(client, on=True, brightess=None):
@@ -145,28 +159,16 @@ async def set_livingroom_lights(client, on=True, brightess=None):
     await Light(client, DEVICES.light_livingroom_side).set_state(on, brightness=brightess)
     await Outlet(client, DEVICES.outlet_tablelamp_1).set_state(on)
 
+
 async def set_tvroom_lights(client, on=True, brightess=None):
     await Outlet(client, DEVICES.outlet_whisky).set_state(on)
+
 
 async def set_entry_lights(client, on=True, brightess=None):
     await Light(client, DEVICES.light_entry_roof_1).set_state(on, brightness=brightess)
     await Light(client, DEVICES.light_entry_roof_2).set_state(on, brightness=brightess)
     await Outlet(client, DEVICES.outlet_entrylight).set_state(on)
 
+
 async def set_secondaryentry_lights(client, on=True, brightess=None):
     await Light(client, DEVICES.light_secondaryentry_roof).set_state(on, brightness=brightess)
-
-
-class SecondaryEntryMotionSensor(TFMotionSensor):
-
-    def __init__(self, client):
-        super().__init__(client, DEVICES.motionsensor_secondaryentry, self._handler)
-
-    class _handler(TFMotionSensorHandler):
-        @staticmethod
-        async def on(client):
-            await Light(client, DEVICES.light_secondaryentry_roof).set_state(True, brightness=100)
-
-        @staticmethod
-        async def off(client):
-            await Light(client, DEVICES.light_secondaryentry_roof).set_state(False)

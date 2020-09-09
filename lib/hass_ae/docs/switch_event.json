@@ -1,0 +1,15 @@
+{
+    "event_type": "deconz_event",
+    "data": {
+        "id": "sw_tf_2",
+        "unique_id": "68:0a:e2:ff:fe:1a:ec:e1",
+        "event": 1002
+    },
+    "origin": "LOCAL",
+    "time_fired": "2020-09-09T17:35:07.748799+00:00",
+    "context": {
+        "id": "cdbc9a68f2c211eabeeebd3a39764b65",
+        "parent_id": null,
+        "user_id": null
+    }
+}
