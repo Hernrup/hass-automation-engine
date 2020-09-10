@@ -41,7 +41,7 @@ async def setup(client, state_manager):
     await TFSwitch(
         identity=DEVICES.switch_livingroom,
         client=client,
-        handler=LivingroomSwitchHandler(client)
+        handler=LivingroomSwitchHandler(client, state_manager)
     ).subscribe()
 
     await TFSwitch(
@@ -76,24 +76,25 @@ async def setup(client, state_manager):
 
 class LivingroomSwitchHandler(TFSwitchHandler):
 
-    def __init__(self, client):
+    def __init__(self, client, state_manager):
         self.client = client
+        self.state_manager = state_manager
 
     async def on(self):
-        await set_livingroom_lights(self.client, True, 100)
-        await set_entry_lights(self.client, True, 100)
+        await set_livingroom_lights(self.client, self.state_manager, True, 100)
+        await set_entry_lights(self.client, self.state_manager, True, 100)
 
     async def on_long(self):
-        await set_livingroom_lights(self.client, True, 30)
-        await set_entry_lights(self.client, True, 30)
+        await set_livingroom_lights(self.client, self.state_manager, True, 30)
+        await set_entry_lights(self.client, self.state_manager, True, 30)
 
     async def off(self):
-        await set_livingroom_lights(self.client, False)
-        await set_entry_lights(self.client, False)
+        await set_livingroom_lights(self.client, self.state_manager, False)
+        await set_entry_lights(self.client, self.state_manager, False)
 
     async def off_long(self):
-        await set_livingroom_lights(self.client, False)
-        await set_entry_lights(self.client, False)
+        await set_livingroom_lights(self.client, self.state_manager, False)
+        await set_entry_lights(self.client, self.state_manager, False)
 
 class NightSwitchHandler(TFSwitchHandler):
 

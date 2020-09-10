@@ -190,6 +190,7 @@ class Light(BoolenStateEntity):
             await self.turn_off()
 
     async def turn_on(self, brightness=None):
+        logger.debug(f'Turning on light with brightness {brightness}')
         service_data = {"entity_id": self.full_identity}
         if brightness:
             service_data.update({"brightness_pct": brightness})
