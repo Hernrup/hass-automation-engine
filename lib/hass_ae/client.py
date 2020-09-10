@@ -6,6 +6,7 @@ import websockets
 import logging
 import cachetools
 import enum
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
@@ -289,7 +290,8 @@ class Call:
 class StateManager():
 
     def __init__(self):
-        self._states = {}
+        self._states = dict()
+        self._subscriptions = defaultdict(list)
 
     @property
     def states(self):
@@ -298,9 +300,10 @@ class StateManager():
     def get(self, state, default=None):
         return self._states.get(state, default)
 
-    def update(self, state, value):
+    async def update(self, state, value):
         self._states[state] = value
         logger.debug(f'{state} changed to {value}')
+        await self._notify_subscribers(state, value)
 
     def load(self, data):
         self._states = self._parse_from_raw_states(data)
@@ -308,3 +311,10 @@ class StateManager():
     @classmethod
     def _parse_from_raw_states(cls, data):
         return {d['entity_id']: d['state'] for d in data}
+
+    async def subscribe(self, state, callback):
+        self._subscriptions[state].append(callback)
+
+    async def _notify_subscribers(self, state, data):
+        for callback in self._subscriptions[state]:
+            await callback(data)

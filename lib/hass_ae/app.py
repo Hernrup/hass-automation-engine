@@ -37,7 +37,7 @@ async def async_main(host, port, access_token):
     await listen_task
 
 async def state_changed_handler(data, client, state_manager):
-    state_manager.update(
+    await state_manager.update(
         state=data['event']['data']['new_state']['entity_id'],
         value=data['event']['data']['new_state']['state']
         )
