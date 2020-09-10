@@ -44,38 +44,32 @@ async def setup(client, state_manager):
     await TFSwitch(
         identity=DEVICES.switch_livingroom,
         client=client,
-        handler=LivingroomSwitchHandler(client, state_manager)
-    ).subscribe()
+    ).subscribe(LivingroomSwitchHandler(client, state_manager))
 
     await TFSwitch(
         identity=DEVICES.switch_night,
         client=client,
-        handler=NightSwitchHandler(client, state_manager)
-    ).subscribe()
+    ).subscribe(NightSwitchHandler(client, state_manager))
 
     await TFSwitch(
         identity=DEVICES.switch_secondary_entry,
         client=client,
-        handler=SecondaryEntrySwitchHandler(client, state_manager)
-    ).subscribe()
+    ).subscribe(SecondaryEntrySwitchHandler(client, state_manager))
 
     await TFSwitch(
         identity=DEVICES.switch_tvroom,
         client=client,
-        handler=TvRoomSwitchHandler(client, state_manager)
-    ).subscribe()
+    ).subscribe(TvRoomSwitchHandler(client, state_manager))
 
     await TFMotionSensor(
         identity=DEVICES.motionsensor_secondaryentry,
         client=client,
-        handler=SecondaryEntryMotionSensorHandler(client, state_manager)
-    ).subscribe()
+    ).subscribe(SecondaryEntryMotionSensorHandler(client, state_manager))
 
     await TFMotionSensor(
         identity=DEVICES.motionsensor_entry,
         client=client,
-        handler=EntryMotionSensorHandler(client, state_manager)
-    ).subscribe()
+    ).subscribe(EntryMotionSensorHandler(client, state_manager))
 
     await InputBoolean(
         identity=DEVICES.input_is_sleep, 

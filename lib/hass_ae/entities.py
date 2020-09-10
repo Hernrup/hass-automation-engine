@@ -6,6 +6,18 @@ import asyncio
 
 logger = logging.getLogger(__name__)
 
+class BooleanStateChangedHandler(abc.ABC):
+
+    def __init__(self, client, state_manager):
+        self.client = client
+        self.state_manager = state_manager
+
+    def on(self):
+        pass
+
+    def off(self):
+        pass
+
 
 class Listner():
 
@@ -35,12 +47,16 @@ class TFSwitch(Listner):
         off=2002
         off_release=2003
 
-    def __init__(self, identity, client, handler):
+    def __init__(self, identity, client):
         self.identity = identity
         self.client = client
         self.full_identity = f'{self.DOMAIN}.{self.identity}'
-        self.handler = handler
+        self.handler = None
         super().__init__(client, 'deconz_event')
+
+    async def subscribe(self, handler):
+        self.handler = handler
+        await super().subscribe()
 
     async def callback(self, data):
         await self.evaluate(data)
@@ -97,12 +113,16 @@ class TFMotionSensor(Listner):
 
     DOMAIN = 'binary_sensor'
 
-    def __init__(self, client, identity, handler):
+    def __init__(self, client, identity):
         self.identity = identity
         self.client = client
         self.full_identity = f'{self.DOMAIN}.{self.identity}'
-        self.handler = handler
+        self.handler = None
         super().__init__(client, 'state_changed')
+
+    async def subscribe(self, handler):
+        self.handler = handler
+        await super().subscribe()
 
     async def callback(self, data):
         await self.evaluate(data)
@@ -170,7 +190,9 @@ class BoolenStateEntity(abc.ABC):
             service='toggle',
             data={"service_data": {"entity_id": self.full_identity}})
 
-    async def subscribe(self, handler):
+    async def subscribe(self, handler:BooleanStateChangedHandler):
+        """ Subscribe to state changes
+        """
 
         async def _internal_handler(data):
             if self.state:
@@ -185,19 +207,6 @@ class BoolenStateEntity(abc.ABC):
     def state(self):
         raw = self.state_manager.get(self.full_identity)
         return bool(raw.lower() == 'on')
-
-class BooleanStateChangedHandler(abc.ABC):
-
-    def __init__(self, client, state_manager):
-        self.client = client
-        self.state_manager = state_manager
-
-    def on(self):
-        pass
-
-    def off(self):
-        pass
-
 
 class Light(BoolenStateEntity):
 
