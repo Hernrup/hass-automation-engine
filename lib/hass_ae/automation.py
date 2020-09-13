@@ -18,6 +18,7 @@ class DEVICES:
     light_entry_roof_1='l_tf_3'
     light_secondaryentry_roof='l_tf_4'
     light_entry_roof_2='l_tf_5'
+    light_linus_roof='l_tf_6'
     # switches
     switch_entry='sw_tf_4'
     switch_livingroom='sw_tf_1'
@@ -30,7 +31,7 @@ class DEVICES:
     outlet_tv='o_rf_3'
     outlet_na_1='o_rf_5'
     outlet_entrylight='o_rf_4'
-    outlet_pc_room='o_tf_1'
+    outlet_tv_lights='o_tf_1'
     #sensors
     motionsensor_secondaryentry='s_ms_tf_1'
     motionsensor_entry='s_ms_tf_2'
@@ -169,13 +170,13 @@ class TvRoomSwitchHandler(TFSwitchHandler):
 
     async def on(self):
         await set_tvroom_lights(self.client, True, 100)
-        await Outlet(DEVICES.outlet_tv, self.client, self.state_manager).turn_on()
 
     async def on_long(self):
-        await set_tvroom_lights(self.client, self.state_manager, True, 30)
+        await Outlet(DEVICES.outlet_tv, self.client, self.state_manager).turn_on()
 
     async def off(self):
         await set_tvroom_lights(self.client, self.state_manager, False)
+        await Outlet(DEVICES.outlet_tv, self.client, self.state_manager).turn_off()
 
     async def off_long(self):
         await set_tvroom_lights(self.client, self.state_manager, False)
@@ -240,6 +241,7 @@ async def set_livingroom_lights(client, state_manager, on=True, brightess=None):
 
 async def set_tvroom_lights(client, state_manager, on=True, brightess=None):
     await Outlet(DEVICES.outlet_whisky, client, state_manager).set_state(on)
+    await Outlet(DEVICES.outlet_tv_lights, client, state_manager).set_state(on)
 
 
 async def set_entry_lights(client, state_manager, on=True, brightess=None):
@@ -248,7 +250,6 @@ async def set_entry_lights(client, state_manager, on=True, brightess=None):
         Light(DEVICES.light_entry_roof_2, client, state_manager).set_state(on, brightness=brightess),
         Outlet(DEVICES.outlet_entrylight, client, state_manager).set_state(on)
     )
-
 
 async def set_secondaryentry_lights(client, state_manager, on=True, brightess=None):
     await Light(DEVICES.light_secondaryentry_roof, client, state_manager).set_state(on, brightness=brightess)
