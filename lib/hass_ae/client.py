@@ -150,7 +150,7 @@ class Client:
         return call.data
 
     async def execute_call(self, call):
-        logger.info(f'Executing call [{call}]')
+        logger.debug(f'Executing call [{call}]')
         self.calls[call.identity] = call
         await self.ws.send(call.request)
 
@@ -170,10 +170,10 @@ class Client:
             try:
                 identity = int(data['id'])
             except KeyError:
-                logger.info('event is missing id, discarding')
+                logger.debug('event is missing id, discarding')
                 return
             except TypeError:
-                logger.info('event is missing id, discarding')
+                logger.debug('event is missing id, discarding')
                 return
 
             try:
@@ -198,7 +198,7 @@ class Client:
         except KeyError:
             logger.warning(f'No call registered for result with id {data["id"]}')
             if data['success'] == True:
-                logger.info(data)
+                logger.debug(data)
             else:
                 logger.error(data)
 
@@ -268,7 +268,7 @@ class Call:
         self._is_complete = True
         self._is_ok = True
         self._response = payload
-        logger.info(f'Completed call [{self}]')
+        logger.debug(f'Completed call [{self}]')
 
     def fail(self, payload):
         self._is_complete = True
@@ -318,3 +318,9 @@ class StateManager():
     async def _notify_subscribers(self, state, data):
         for callback in self._subscriptions[state]:
             await callback(data)
+
+    async def event_callback(self, data):
+        await self.update(
+            state=data['event']['data']['new_state']['entity_id'],
+            value=data['event']['data']['new_state']['state']
+            )
